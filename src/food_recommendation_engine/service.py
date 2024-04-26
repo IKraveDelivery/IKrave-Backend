@@ -67,7 +67,7 @@ class FoodRecommendationEngineService:
                     "item_name": a.iloc[idx]['item_name'],
                     "cuisine_type": a.iloc[idx]['cuisine_type'],
                     "merchant_id": a.iloc[idx]['merchant_id'],
-                    "cosine_similarity": cosine_sim_df[index].iloc[idx]
+                    # "cosine_similarity": cosine_sim_df[index].iloc[idx]
                 }
                 result.append(food_object)
 
@@ -131,7 +131,7 @@ class FoodRecommendationEngineService:
                     "item_name": a.iloc[idx]['item_name'],
                     "cuisine_type": a.iloc[idx]['cuisine_type'],
                     "merchant_id": a.iloc[idx]['merchant_id'],
-                    "cosine_similarity": cosine_sim_df[index].iloc[idx]
+                    # "cosine_similarity": cosine_sim_df[index].iloc[idx]
                 }
                 result.append(food_object)
 
