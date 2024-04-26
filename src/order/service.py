@@ -177,18 +177,15 @@ class OrderService:
             print(f'get_order_by_user_id_and_order_id - no order found for : {order_id}')
             raise CustomException(404, "Order not found", ErrorTypesEnum.NOT_FOUND_ERROR.value)
 
-        order['_id'] = str(order['_id'])
-        order['user_id'] = str(order['user_id'])
+        order = convert_object_ids_to_strings(order)
 
-        if 'driver_id' in order:
-            order['driver_id'] = str(order['driver_id'])
+        for items_by_merchant in order['items_by_merchant']:
+            merchant = merchant_service.get_merchant(items_by_merchant['merchant_id'])
+            items_by_merchant['merchant_data'] = merchant
 
-        for order_item in order["items_by_merchant"]:
-            order_item['merchant_id'] = str(order_item['merchant_id'])
-
-            for item in order_item["items"]:
-                item['_id'] = str(item['_id'])
-                item['food_id'] = str(item['food_id'])
+            for item in items_by_merchant['items']:
+                food_item = food_service.get_food_item_by_food_id(item['food_id'])
+                item['food_data'] = food_item
 
         print(f'get_order_by_user_id_and_order_id - success : {order}')
         return order
