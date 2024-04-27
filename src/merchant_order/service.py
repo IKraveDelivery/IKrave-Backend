@@ -6,10 +6,15 @@ from libs.db import connect_to_mongodb
 from libs.fcm_service import FCMService
 from libs.helpers import CustomException, convert_object_ids_to_strings
 from libs.enums import ErrorTypesEnum, OrderStatusEnum
+
+from src.food.service import FoodService
+from src.merchant.service import MerchantService
 from src.user.service import UserService
 
 # fcm_service = FCMService()
 user_service = UserService()
+merchant_service = MerchantService()
+food_service = FoodService()
 
 
 class MerchantOrderService:
@@ -27,9 +32,18 @@ class MerchantOrderService:
 
         cursor = self.merchant_orders_collection.find(query)
         documents = []
+
         for document in cursor:
             document = convert_object_ids_to_strings(document)
+            merchant_data = merchant_service.get_merchant(document['merchant_id'])
+            document['merchant_data'] = merchant_data
+
+            for item in document['items']:
+                food_data = food_service.get_food_item_by_food_id(item['food_id'])
+                item['food_data'] = food_data
+
             documents.append(document)
+
         print(f'get_merchant_orders_by_merchant_id - success : {documents}')
         return documents
 
@@ -45,6 +59,14 @@ class MerchantOrderService:
             raise CustomException(404, "Merchant order not found!", ErrorTypesEnum.NOT_FOUND_ERROR.value)
 
         merchant_order = convert_object_ids_to_strings(merchant_order)
+
+        merchant_data = merchant_service.get_merchant(merchant_order['merchant_id'])
+        merchant_order['merchant_data'] = merchant_data
+
+        for item in merchant_order['items']:
+            food_data = food_service.get_food_item_by_food_id(item['food_id'])
+            item['food_data'] = food_data
+
         print(f'get_merchant_order_by_merchant_id_and_order_id - success : {merchant_order}')
         return merchant_order
 
