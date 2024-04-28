@@ -71,7 +71,6 @@ class OrderService:
                         "item_total_price": item_total_price
                     }],
                     "merchant_order_total_price": item_total_price,
-                    "status": OrderStatusEnum.PENDING.value,
                     "created_at": current_timestamp,
                     "updated_at": current_timestamp
                 })
@@ -127,6 +126,7 @@ class OrderService:
                 'latitude': data['latitude'],
                 'longitude': data['longitude'],
                 'driver_id': ObjectId(driver['_id']),
+                "status": OrderStatusEnum.PENDING.value,
             }
 
             for key, value in merchant_obj.items():
@@ -138,6 +138,20 @@ class OrderService:
         merchant_orders = merchant_order_service.get_merchant_orders_by_user_id_and_order_id(user_id, order_id_str)
 
         cart = cart_service.clear_cart(user_id)
+
+        # adding merchant order id to the items_by_merchant in order
+
+        for merchant_order in merchant_orders:
+            order_update_query = {
+                "_id": ObjectId(order_id_str),
+                "items_by_merchant.merchant_id": ObjectId(merchant_order['merchant_id'])
+            }
+
+            order_update_data = {"items_by_merchant.$.merchant_order_id": ObjectId(merchant_order['_id'])}
+
+            self.update_order_by_query(order_update_query, order_update_data)
+
+        order = self.get_order_by_order_id(order_id_str)
 
         # send a notification to the user
 
@@ -183,6 +197,10 @@ class OrderService:
             merchant = merchant_service.get_merchant(items_by_merchant['merchant_id'])
             items_by_merchant['merchant_data'] = merchant
 
+            merchant_order = merchant_order_service.get_merchant_order_by_merchant_id_and_order_id(
+                items_by_merchant['merchant_id'], items_by_merchant['merchant_order_id'])
+            items_by_merchant['merchant_order_data'] = merchant_order
+
             for item in items_by_merchant['items']:
                 food_item = food_service.get_food_item_by_food_id(item['food_id'])
                 item['food_data'] = food_item
@@ -219,6 +237,10 @@ class OrderService:
                 merchant = merchant_service.get_merchant(items_by_merchant['merchant_id'])
                 items_by_merchant['merchant_data'] = merchant
 
+                merchant_order = merchant_order_service.get_merchant_order_by_merchant_id_and_order_id(
+                    items_by_merchant['merchant_id'], items_by_merchant['merchant_order_id'])
+                items_by_merchant['merchant_order_data'] = merchant_order
+
                 for item in items_by_merchant['items']:
                     food_item = food_service.get_food_item_by_food_id(item['food_id'])
                     item['food_data'] = food_item
@@ -239,6 +261,20 @@ class OrderService:
             update_query["$set"][key] = value
 
         updated_result = self.orders_collection.update_one({"_id": ObjectId(order_id)}, update_query)
+
+        print(f'update_order - success - {updated_result}')
+
+    def update_order_by_query(self, query: dict, order_data: dict):
+        update_query = {
+            "$set": {
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+
+        for key, value in order_data.items():
+            update_query["$set"][key] = value
+
+        updated_result = self.orders_collection.update_one(query, update_query)
 
         print(f'update_order - success - {updated_result}')
 
